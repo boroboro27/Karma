@@ -1,0 +1,7 @@
+__pycache__
+.vscode
+venv
+config.py
+uwsgi
+logs
+.git
