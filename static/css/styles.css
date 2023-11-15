@@ -63,15 +63,17 @@ ul.mainmenu li a {
     font-weight: bold;
     text-transform: uppercase;
     padding: 20px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     margin-left: auto;
 }
 
+/*
 ul.mainmenu li a:hover {
     color: #fda83d;
     background-color: #fff;
-    border-radius: 5px;
+    border-radius: 1px;
 }
+*/
 
 div.content {
     margin: 20px;
@@ -140,7 +142,7 @@ select {
     margin-bottom: 10px;
 }
 
-.subscription input {
+.request_take input {
     border: 1px solid #000000;
     background: #fdc073;
     color: #000000;

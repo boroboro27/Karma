@@ -31,8 +31,11 @@
           <th>Автор</th>
           <th>Жанр</th>
           <th>Год издания</th>
+          <th>Количество страниц</th>
           <th>Владелец</th>
           <th>Дата добавления</th>
+          <th>Доступна с..</th>
+          <th>Действие</th>
         </tr>
       </thead>
       <tbody>
@@ -43,8 +46,15 @@
           <td>{{ book.author }}</td>
           <td>{{ book.genre }}</td>
           <td>{{ book.year }}</td>
+          <td>{{ book.pages }}</td>
           <td>{{ book.owner }}</td>
-          <td>{{ book.dt_new }}</td>
+          <td>{{ book.dt_reg }}</td>
+          <td>{{ book.dt_available }}</td>
+          <td>
+            <form method="get" action="{{ url_for('req_take_book', book_code=book.code) }}" class="request_take">
+              <input type="submit" value="запрос на выдачу">
+            </form>  
+          </td>
         </tr>
         {% endfor %}
       </tbody>

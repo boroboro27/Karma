@@ -49,13 +49,10 @@ def index():
     if 'logged_in' in session:
         if request.method == "POST":
             pass
-        else:            
-            user_id = dbase.getUser(session['userLogged'])
+        else:
             return render_template('index.html', title='Полка "Книжного перекрестка"',
-                                   avl_books=dbase.getAvailableBooks(),
-                                   # False, т.е. не для отображения в ЛК, а для Главной
-                                   taken_books=dbase.getTakenBooks(
-                                       user_id[0], False),
+                                   avl_books=callproc('[dbo].[sp_get_available_books]', (session['userLogged'].split('@')[0],)),                                   
+                                   taken_books=callproc('[dbo].[sp_get_taken_books]', (session['userLogged'].split('@')[0],)),
                                    menu=callproc('[dbo].[sp_get_menu]', ()), user=session['userLogged'].split('@')[0])
     else:
         return redirect(url_for('login'))
@@ -73,15 +70,16 @@ def about():
 @app.route("/add_book", methods=["POST", "GET"])
 def add_book():
     
-    if 'logged_in' in session:
-        user_id = dbase.getUser(session['userLogged'])
+    if 'logged_in' in session:        
         if request.method == "POST":
             # title, author, year, status, add_userid
-            res = dbase.addBook(request.form["title-book"].strip(),
-                                request.form["author-book"].strip(),
-                                request.form["genre_id"].strip(),
-                                request.form["year-book"].strip(),
-                                user_id[0])
+            res = callproc('[dbo].[sp_add_new_book', (session['userLogged'], 
+                                            request.form["title-book"].strip(),
+                                            request.form["author-book"].strip(),
+                                            request.form["genre_id"].strip(),
+                                            request.form["year-book"].strip(),
+                                            request.form["pages"].strip()
+                                            ))            
             if not res[0]:
                 flash(f"Ошибка добавления книги в каталог: {res[1]}. Если не удается устранить ошибку самостоятельно, \n"
                       f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
@@ -91,8 +89,28 @@ def add_book():
                        f'Теперь можете поставить книгу на полку в зоне обмена "Книжного перекрестка".'), category='success')
 
         return render_template('add-book.html', title="Регистрация новой книги",
-                               menu=callproc('[dbo].[sp_get_menu]', ()), genres=dbase.getGenres(),
+                               menu=callproc('[dbo].[sp_get_menu]', ()), genres=callproc('[dbo].[sp_get_genres]', ()),
                                user=session['userLogged'].split('@')[0])
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/req_take_book/<int:code>', methods=["GET"])
+def take_book():    
+    if 'logged_in' in session:
+        user_id = dbase.getUser(session['userLogged'])
+        book_code = request.form['book_code'].strip()
+        if book_code.isdigit() and len(book_code) == 5:
+            res = dbase.takeBook(book_code, user_id[0])
+            if not res[0]:
+                flash(f"Ошибка при выдаче книги из каталога: {res[1]}. Если не удается устранить ошибку самостоятельно, \n"
+                      f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
+            else:
+                flash((f"Книга под номером #{request.form['book_code'].strip()} успешно выдана из каталога (заведено новых формуляров: {res[1]}). "
+                       f'Возьмите, пожалуйста, книгу с полки в зоне обмена "Книжного перекрестка".'), category='success')
+        else:
+            flash(f"Ошибка при указании кода книги: код должен состоять из 5 цифр. Если не удается устранить ошибку самостоятельно, \n"
+                  f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
+        return redirect(url_for('lk'))
     else:
         return redirect(url_for('login'))
 
@@ -183,7 +201,7 @@ def rules():
     if 'logged_in' in session:
         
         return render_template('rules.html', title='Правила проекта "Книжный перекрёсток"',
-                               rules=dbase.getRules(),
+                               rules=callproc('[dbo].[sp_get_rules]', ()),
                                menu=callproc('[dbo].[sp_get_menu]', ()),
                                user=session['userLogged'].split('@')[0])
     else:
@@ -251,7 +269,7 @@ def verify_code():
         if 'code' in session and str(session['code']) == code:
             add_user = callproc('[dbo].[sp_add_new_user]', (session['userLogged'],))
             #Если 1, то новый пользователь добавлен, если 0 - уже зарегистрирован
-            if add_user['result']: 
+            if add_user[0]['result']: 
                 # сохранение информации о входе в сессию
                 session['logged_in'] = True
                 return redirect(url_for('rules'))
