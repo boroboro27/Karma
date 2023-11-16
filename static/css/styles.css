@@ -151,6 +151,15 @@ select {
     font-size: 14px;
 }
 
+.subscription input {
+    border: 1px solid #000000;
+    background: #fdc073;
+    color: #000000;
+    border-radius: 2px;
+    margin-bottom: 0px;
+    font-size: 14px;
+}
+
 .flash {
     padding: 10px;
     border-radius: 5px;

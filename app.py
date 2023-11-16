@@ -50,9 +50,9 @@ def index():
         if request.method == "POST":
             pass
         else:
-            return render_template('index.html', title='Полка "Книжного перекрестка"',
-                                   avl_books=callproc('[dbo].[sp_get_available_books]', (session['userLogged'].split('@')[0],)),                                   
-                                   taken_books=callproc('[dbo].[sp_get_taken_books]', (session['userLogged'].split('@')[0],)),
+            return render_template('index.html', title='Каталог "Книжного перекрестка"',
+                                   avl_books=callproc('[dbo].[sp_get_available_books]', (session['userLogged'],)),                                   
+                                   taken_books=callproc('[dbo].[sp_get_taken_books]', (session['userLogged'],)),
                                    menu=callproc('[dbo].[sp_get_menu]', ()), user=session['userLogged'].split('@')[0])
     else:
         return redirect(url_for('login'))
@@ -73,20 +73,21 @@ def add_book():
     if 'logged_in' in session:        
         if request.method == "POST":
             # title, author, year, status, add_userid
-            res = callproc('[dbo].[sp_add_new_book', (session['userLogged'], 
+            res = callproc('[dbo].[sp_add_new_book]', (session['userLogged'], 
                                             request.form["title-book"].strip(),
                                             request.form["author-book"].strip(),
                                             request.form["genre_id"].strip(),
                                             request.form["year-book"].strip(),
                                             request.form["pages"].strip()
                                             ))            
-            if not res[0]:
-                flash(f"Ошибка добавления книги в каталог: {res[1]}. Если не удается устранить ошибку самостоятельно, \n"
+            if not res[0]['result']:
+                flash(f"Ошибка добавления книги в каталог. Если не удается устранить ошибку самостоятельно, \n"
                       f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
-            else:
-                flash((f"Книга успешно добавлена в каталог под номером #{res[1]}. "
-                       f"Запишите или вклейте этот номер в книгу на видное место. "
-                       f'Теперь можете поставить книгу на полку в зоне обмена "Книжного перекрестка".'), category='success')
+            else:                
+                flash((f"Книга успешно добавлена в каталог под номером #{res[0]['result']}. \n"                       
+                       f"Запишите этот номер в книгу на 17ой странице. \n"
+                       f'Благодаря этому любой читатель книги всегда будет знать, кому она принадлежит. \n'
+                       f"Спасибо, что поддерживаете активность в нашем проекте. \n"), category='success')
 
         return render_template('add-book.html', title="Регистрация новой книги",
                                menu=callproc('[dbo].[sp_get_menu]', ()), genres=callproc('[dbo].[sp_get_genres]', ()),
@@ -94,49 +95,58 @@ def add_book():
     else:
         return redirect(url_for('login'))
 
-@app.route('/req_take_book/<int:code>', methods=["GET"])
-def take_book():    
-    if 'logged_in' in session:
-        user_id = dbase.getUser(session['userLogged'])
-        book_code = request.form['book_code'].strip()
-        if book_code.isdigit() and len(book_code) == 5:
-            res = dbase.takeBook(book_code, user_id[0])
-            if not res[0]:
-                flash(f"Ошибка при выдаче книги из каталога: {res[1]}. Если не удается устранить ошибку самостоятельно, \n"
-                      f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
-            else:
-                flash((f"Книга под номером #{request.form['book_code'].strip()} успешно выдана из каталога (заведено новых формуляров: {res[1]}). "
-                       f'Возьмите, пожалуйста, книгу с полки в зоне обмена "Книжного перекрестка".'), category='success')
+@app.route('/req_take_book/<string:book_code>', methods=["GET"])
+def req_take_book(book_code):    
+    if 'logged_in' in session:   
+        res = callproc('[dbo].[sp_change_status]', (book_code, 2, session['userLogged']))
+        if not res[0]['result']:
+            flash(f"Ошибка при запросе книги с кодом #{book_code} у владельца. \n"
+                  f"Убедитесь, что у вас нет на руках других книг, или что вы являетесь владельцем этой книги. \n"
+                  f"Кроме этого, возможно, что книга уже выдана или запрошена другим пользователем :) \n"
+                  f"Если не удается выявить ошибку самостоятельно, \n"
+                    f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
-            flash(f"Ошибка при указании кода книги: код должен состоять из 5 цифр. Если не удается устранить ошибку самостоятельно, \n"
-                  f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
+            flash((f"Книга с кодом #{book_code} успешно запрошена у владельца. \n"
+                   f"Мы сообщили ему об этом по эл. почте. \n"
+                    f'Ожидайте, пожалуйста, когда владелец свяжется с вами для передачи книги.'), category='success')    
+        return redirect(url_for('lk'))
+    else:
+        return redirect(url_for('login'))
+    
+@app.route('/unreq_take_book/<string:book_code>', methods=["GET"])
+def unreq_take_book(book_code):    
+    if 'logged_in' in session:   
+        res = callproc('[dbo].[sp_change_status]', (book_code, 3, session['userLogged']))
+        if not res[0]['result']:
+            flash(f"Ошибка при отмене запроса к владельцу на выдачу книги с кодом #{book_code}. \n"                  
+                  f"Если не удается выявить ошибку самостоятельно, \n"
+                    f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
+        else:
+            flash((f"Отменен запрос на выдачу книги с кодом #{book_code}. "
+                    f'Владелец книги будет уведомлен об этом по эл. почте. '), category='success')    
         return redirect(url_for('lk'))
     else:
         return redirect(url_for('login'))
 
 
-@app.route('/take_book', methods=["POST"])
-def take_book():    
-    if 'logged_in' in session:
-        user_id = dbase.getUser(session['userLogged'])
-        book_code = request.form['book_code'].strip()
-        if book_code.isdigit() and len(book_code) == 5:
-            res = dbase.takeBook(book_code, user_id[0])
-            if not res[0]:
-                flash(f"Ошибка при выдаче книги из каталога: {res[1]}. Если не удается устранить ошибку самостоятельно, \n"
-                      f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
-            else:
-                flash((f"Книга под номером #{request.form['book_code'].strip()} успешно выдана из каталога (заведено новых формуляров: {res[1]}). "
-                       f'Возьмите, пожалуйста, книгу с полки в зоне обмена "Книжного перекрестка".'), category='success')
+@app.route('/take_book/<string:book_code>/<string:reader>', methods=["GET"])
+def take_book(book_code, reader):    
+    if 'logged_in' in session:        
+        res = callproc('[dbo].[sp_change_status]', (book_code, 4, session['userLogged']))        
+        if not res[0]['result']:
+            flash(f"Ошибка при выдаче книги под номером #{book_code}. \n"
+                  f"Если не удается устранить ошибку самостоятельно, \n"
+                    f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
-            flash(f"Ошибка при указании кода книги: код должен состоять из 5 цифр. Если не удается устранить ошибку самостоятельно, \n"
-                  f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
+            flash((f"Книга под номером #{book_code} успешно выдана из каталога (заведено новых формуляров: {res[1]}). "
+                    f'Возьмите, пожалуйста, книгу с полки в зоне обмена "Книжного перекрестка".'), category='success')
+        
         return redirect(url_for('lk'))
     else:
         return redirect(url_for('login'))
 
 
-@app.route('/return_book/<int:book_code>', methods=["GET"])
+@app.route('/return_book/<string:book_code>', methods=["GET"])
 def return_book_get(book_code):
     if 'logged_in' in session:
         user_id = dbase.getUser(session['userLogged'])
@@ -153,12 +163,12 @@ def return_book_get(book_code):
         return redirect(url_for('login'))
 
 
-@app.route('/subscribe_book/<int:book_id>', methods=["GET"])
-def subscribe_book(book_id):
+@app.route('/subscribe_book/<string:book_code>', methods=["GET"])
+def subscribe_book(book_code):
     if 'logged_in' in session:
         user_id = dbase.getUser(session['userLogged'])
-        res = dbase.subscribeBook(book_id, user_id[0])
-        book = dbase.getBook(book_id)
+        res = dbase.subscribeBook(book_code, user_id[0])
+        book = dbase.getBook(book_code)
         if not res[0] or not book:
             flash(f"Ошибка при подписке на книгу: {res[1]}. Если не удается устранить ошибку самостоятельно, \n"
                   f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
@@ -179,7 +189,7 @@ def subscribe_book(book_id):
         return redirect(url_for('login'))
 
 
-@app.route('/unsubscribe_book/<int:book_id>', methods=["GET"])
+@app.route('/unsubscribe_book/<string:book_id>', methods=["GET"])
 def unsubscribe_book(book_id):
     if 'logged_in' in session:
         user_id = dbase.getUser(session['userLogged'])
@@ -196,7 +206,7 @@ def unsubscribe_book(book_id):
         return redirect(url_for('login'))
 
 
-@app.route("/rules", methods=["POST", "GET"])
+@app.route("/rules", methods=["GET"])
 def rules():
     if 'logged_in' in session:
         
@@ -215,8 +225,7 @@ def lk():
         user_id = dbase.getUser(session['userLogged'])
         return render_template('lk.html', title='Личный кабинет',
                                # True - т.е. для отображения в ЛК, а не на главной
-                               taken_books=dbase.getTakenBooks(
-                                   user_id[0], True),
+                               taken_books=callproc('[dbo].[sp_get_taken2me_books]', (session['userLogged'],)),
                                subscriptions=dbase.getSubscriptions(
                                    user_id[0]),
                                book_log=dbase.getBookLog(user_id[0]),

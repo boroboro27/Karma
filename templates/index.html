@@ -6,21 +6,14 @@
 <div class="flash {{cat}}">{{msg}}</div>
 {% endfor %}
 
-<p><label>.:<b>: ВЗЯТЬ КНИГУ :</b>:.</label></p>
-<p><label>Введите 5-значный код, указанный на(в) книге:</label></p>
-<form class="form-take-book">
-  <label for="book_code"></label>
-  <input type="text" id="" name="book_code">
-  <input formaction="{{url_for('take_book')}}" formmethod="post" type="submit" value="Взять с полки" />
-</form>
 <br>
 
 <div class="tabs">
   <input type="radio" name="inset" value="" id="tab_1" checked>
-  <label for="tab_1">СВОБОДНЫЕ КНИГИ</label>
+  <label for="tab_1">ДОСТУПНЫЕ МНЕ КНИГИ</label>
 
   <input type="radio" name="inset" value="" id="tab_2">
-  <label for="tab_2">ВЫДАННЫЕ КНИГИ</label>  
+  <label for="tab_2">СКОРО СМОГУ ПОЧИТАТЬ</label>  
 
   <div id="tbl_1">
     <table>
@@ -33,15 +26,15 @@
           <th>Год издания</th>
           <th>Количество страниц</th>
           <th>Владелец</th>
-          <th>Дата добавления</th>
-          <th>Доступна с..</th>
+          <th>Регистрация книги</th>
+          <th>Последний возврат</th>
           <th>Действие</th>
         </tr>
       </thead>
       <tbody>
         {% for book in avl_books %}
         <tr>
-          <td>{{ book.code }}</td>
+          <td>{{ book.book_code }}</td>
           <td>{{ book.title }}</td>
           <td>{{ book.author }}</td>
           <td>{{ book.genre }}</td>
@@ -51,7 +44,7 @@
           <td>{{ book.dt_reg }}</td>
           <td>{{ book.dt_available }}</td>
           <td>
-            <form method="get" action="{{ url_for('req_take_book', book_code=book.code) }}" class="request_take">
+            <form method="get" action="{{ url_for('req_take_book', book_code=book.book_code) }}" class="request_take">
               <input type="submit" value="запрос на выдачу">
             </form>  
           </td>
@@ -69,10 +62,13 @@
           <th>Автор</th>
           <th>Жанр</th>
           <th>Год издания</th>
+          <th>Количество страниц</th>
+          <th>Владелец</th>
           <th>Читатель</th>
           <th>Дата выдачи</th>
-          <th>Срок возврата</th>
-          <th>Хочу прочитать</th>
+          <th>Срок возврата</th>   
+          <th>Статус</th>        
+          <th>Действие</th>
         </tr>
       </thead>
       <tbody>
@@ -82,21 +78,20 @@
           <td>{{ book.title }}</td>
           <td>{{ book.author }}</td>
           <td>{{ book.genre }}</td>
-          <td>{{ book.public_year }}</td>
-          <td>{{ book.user_name }}</td>
+          <td>{{ book.year }}</td>
+          <td>{{ book.pages }}</td>
+          <td>{{ book.owner }}</td>
+          <td>{{ book.reader }}</td>
           <td>{{ book.dt_take }}</td>
-          <td>{{ book.dt_deadline }}</td>
-          <td>
-            {% if book.user_name == user %}
-            <form method="post" action="{{ url_for('lk') }}">
-              <input type="submit" value="сейчас читаю">
-            </form>
-            {% elif book.subs_status == 1 %}
-            <form method="post" action="{{ url_for('lk') }}">
+          <td>{{ book.dt_return }}</td>      
+          <td>{{ book.oper_type }}</td>
+          <td>            
+            {% if book.subs_status == 1 %}
+            <form method="post" action="{{ url_for('lk') }}" class="subscription" >
               <input type="submit" value="уже подписан">
             </form>
             {% elif book.subs_status == 0 %}
-            <form method="get" action="{{ url_for('subscribe_book', book_id=book.book_id) }}" class="subscription">
+            <form method="get" action="{{ url_for('subscribe_book', book_code=book.book_code) }}" class="subscription">
               <input type="submit" value="подписаться">
             </form>        
             {% endif %}
