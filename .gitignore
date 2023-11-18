@@ -6,3 +6,5 @@ uwsgi
 logs
 .git
 !!ТЕСТИРОВАНИЕ
+\!\!ТЕСТИРОВАНИЕ/samples.sql
+\!\!ТЕСТИРОВАНИЕ/test_dataset.sql
