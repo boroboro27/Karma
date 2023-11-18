@@ -101,7 +101,7 @@ def req_take_book(book_code, owner):
         res = callproc('[dbo].[sp_change_status]', (book_code, 2, session['userLogged']))
         if not res[0]['result']:
             flash(f"Ошибка запроса на выдачу книги с кодом #{book_code}. \n"
-                  f"Убедитесь, что у вас нет на руках других книг, или что вы являетесь владельцем этой книги. \n"
+                  f"Убедитесь, что у вас нет на руках других книг, и что вы не являетесь владельцем этой книги. \n"
                   f"Кроме этого, возможно, что книга уже выдана или запрошена другим пользователем:) \n"
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
@@ -109,7 +109,7 @@ def req_take_book(book_code, owner):
             is_sent = send_email(f'Статус книги #{book_code}',
                                f"Читателем запрошена выдача книги с кодом #{book_code}. "
                                f"Свяжитесь с читатателем по адресу эл.почты {session['userLogged']} "
-                               f"для очной передачи книги читателю. "
+                               f"для очной передачи книги. "
                                f"ПОСЛЕ факта передачи книги читателю подтвердите, пожалуйста, выдачу книги в личном кабинете.",
                                [f'{owner}@tele2.ru'])
             if not is_sent[0]:
@@ -242,7 +242,7 @@ def extend_book(book_code, reader):
         else:
             is_sent = send_email(f'Статус книги #{book_code}',
                                f"Запрос на продление книги с кодом #{book_code} подтверждён владельцем {session['userLogged'].split('@')[0]}. "
-                               f"Книгу необходимо вернуть в новый установленный срок (см. Личный кабинет)"
+                               f"Книгу необходимо вернуть в новый установленный срок (см. Личный кабинет). "
                                f"С вашей стороны действий не требуется.",
                                [f'{reader}@tele2.ru'])
             if not is_sent[0]:
@@ -251,7 +251,7 @@ def extend_book(book_code, reader):
             else:
                 flash(f"Уведомление успешно отправлено читателю книги на адрес эл.почты {reader}@tele2.ru."
                       , category='success') 
-            flash((f"Книга под кодом #{book_code} успешно продлена. \n"
+            flash((f"Книга с кодом #{book_code} успешно продлена. \n"
                    f'Читатель книги был уведомлен об этом по эл. почте.\n'
                    f"Спасибо, что поддерживаете активность в нашем проекте. \n"), category='success')
         
@@ -301,7 +301,7 @@ def req_return_book(book_code, owner):
                                f"Поступил запрос от читателя на организацию возврата вашей книги с кодом #{book_code}. "
                                f"Свяжитесь с читатателем по адресу эл.почты {session['userLogged']} "
                                f"для очной передачи книги. "
-                               f"После факта получения книги подтвердите возврат книги в личном кабинете.",
+                               f"ПОСЛЕ факта получения книги подтвердите возврат книги в личном кабинете.",
                                [f'{owner}@tele2.ru'])
             if not is_sent[0]:
                 flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru. \n"
@@ -353,7 +353,7 @@ def return_book(book_code, reader):
         else:
             is_sent = send_email(f'Статус книги #{book_code}',
                                f"Возврат книги с кодом #{book_code} подтверждён владельцем {session['userLogged'].split('@')[0]}. "
-                               f"С вашей стороны дополнительных действий не требуется."
+                               f"С вашей стороны дополнительных действий не требуется. "
                                f"Спасибо, что участвуете в проекте! Возращайтесь снова!",
                                [f'{reader}@tele2.ru'])
             if not is_sent[0]:
@@ -376,10 +376,10 @@ def return_book(book_code, reader):
                                f"Поспеши, если книга тебе ещё интересна! Отменить подписку на книгу можно в личном кабинете. ",
                                addressees)
             if not is_sent[0]:
-                flash(f"Ошибка при отправке уведомлений подписчикам книги. \n"
+                flash(f"Ошибка при отправке уведомлений подписчикам о доступности книги. \n"
                       f"Сообщите, пожалуйста, об ошибке организаторам проекта через форму обратной связи.", category='error')                
             else:
-                flash(f"Уведомления успешно отправлены подписчикам книги."
+                flash(f"Уведомления о доступности книги успешно отправлены подписчикам."
                       , category='success') 
         
         return redirect(url_for('lk'))
@@ -526,7 +526,8 @@ def contact():
                        f"Ожидайте ответа от организаторов на адрес вашей эл. почты: {session['userLogged']}"), category='success')
 
         return render_template('contact.html', title="Обратная связь", menu=callproc('[dbo].[sp_get_menu]', ()),
-                               feedbacks=callproc('[dbo].[sp_get_fb_support]', (session['userLogged'],)))
+                               feedbacks=callproc('[dbo].[sp_get_fb_support]', (session['userLogged'],)),
+                               user=session['userLogged'].split('@')[0], check_admin=callproc('[dbo].[sp_get_is_admin]', (session['userLogged'],)))
     else:
         return redirect(url_for('login'))
 

@@ -1,4 +1,5 @@
-{% extends 'base.html' %} {% block content %} 
+{% extends 'base.html' %} 
+{% block content %} 
 {{ super() }} 
 {% for cat, msg in get_flashed_messages(True) %}
 <div class="flash {{cat}}">{{msg}}</div>
@@ -41,17 +42,17 @@
       <td>
         {% if book.last_oper_id == 2 %}
         <form method="get" action="{{ url_for('unreq_take_book', book_code=book.book_code, owner=book.owner) }}"
-          name="book_code">
+          name="book_code" class="lk_buttons">
           <input type="submit" value="отменить запрос" />
         </form>
         {% elif book.last_oper_id == 4 %}
         <form method="get" action="{{ url_for('req_return_book', book_code=book.book_code, owner=book.owner) }}"
-          name="book_code">
+          name="book_code" class="lk_buttons">
           <input type="submit" value="вернуть книгу" />
         </form>
         {% elif book.last_oper_id == 9 %}
         <form method="get" action="{{ url_for('unreq_return_book', book_code=book.book_code, owner=book.owner) }}"
-          name="book_code">
+          name="book_code" class="lk_buttons">
           <input type="submit" value="отменить запрос" />
         </form>
         {% else %}
@@ -139,17 +140,17 @@
           <td>
             {% if book.last_oper_id == 2 %}
             <form method="get" action="{{ url_for('take_book', book_code=book.book_code, reader=book.reader) }}"
-              name="book_code">
+              name="book_code" class="lk_buttons">
               <input type="submit" value="выдать" />
             </form>
             {% elif book.last_oper_id == 5 %}
             <form method="get" action="{{ url_for('extend_book', book_code=book.book_code, reader=book.reader) }}"
-              name="book_code">
+              name="book_code" class="lk_buttons">
               <input type="submit" value="продлить" />
             </form>
             {% elif book.last_oper_id == 9 %}
             <form method="get" action="{{ url_for('return_book', book_code=book.book_code, reader=book.reader) }}"
-              name="book_code">
+              name="book_code" class="lk_buttons">
               <input type="submit" value="подтвердить возврат" />
             </form>
             {% else %}
@@ -161,12 +162,12 @@
           <td>
             {% if book.last_oper_id == 5 %}
             <form method="get" action="{{ url_for('unextend_book', book_code=book.book_code, reader=book.reader) }}"
-              name="book_code">
+              name="book_code" class="lk_buttons">
               <input type="submit" value="отказать" />
             </form>
             {% elif book.last_oper_id == 4 %}
             <form method="get" action="{{ url_for('extend_book', book_code=book.book_code, reader=book.reader) }}"
-              name="book_code">
+              name="book_code" class="lk_buttons">
               <input type="submit" value="продлить" />
               {% else %}
               <form method="get" action="{{ url_for('lk') }}" name="book_code">
@@ -223,7 +224,8 @@
           <th>Название</th>
           <th>Автор</th>
           <th>Год издания</th>
-          <th>Владелец</th>
+          <th>Владелец книги</th>
+          <th>Читатель</th>
           <th>Операция</th>
           <th>Дата и время</th>
         </tr>
@@ -236,6 +238,7 @@
           <td>{{ oper.author }}</td>
           <td>{{ oper.year }}</td>
           <td>{{ oper.owner }}</td>
+          <td>{{ oper.reader }}</td>
           <td>{{ oper.oper_type }}</td>
           <td>{{ oper.dt_reg }}</td>
         </tr>

@@ -32,11 +32,11 @@
       <td>{{ fb.dt_new }}</td>
       <td>{{ fb.dt_close }}</td>      
       <td>
-        {% if fb.is_admin == 1 and fb.status == 1 %}
+        {% if check_admin[0].result == 1 and fb.status == 1 %}
         <form method="get" action="{{ url_for('close_feedback', fb_id=fb.id) }}" name='fb_id'>
           <input type="submit" value="закрыть">
         </form>
-        {% elif fb.is_admin == 0 and fb.status == 1 %}
+        {% elif check_admin[0].result == 0 and fb.status == 1 %}
         ожидайте решения
         {% else %}
         закрыто      
