@@ -160,7 +160,7 @@
           </td>
           <td>
             {% if book.last_oper_id == 5 %}
-            <form method="get" action="{{ url_for('unextend_book', book_code=book.book_code, reader=reader.owner) }}"
+            <form method="get" action="{{ url_for('unextend_book', book_code=book.book_code, reader=book.reader) }}"
               name="book_code">
               <input type="submit" value="отказать" />
             </form>
