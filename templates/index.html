@@ -6,7 +6,9 @@
 <div class="flash {{cat}}">{{msg}}</div>
 {% endfor %}
 
-<br>
+<p>
+  <label>.:<b>: ВСЕ КНИГИ КОЛЛЕГ :</b>:.</label>
+</p>
 
 <div class="tabs">
   <input type="radio" name="inset" value="" id="tab_1" checked>
@@ -44,7 +46,7 @@
           <td>{{ book.dt_reg }}</td>
           <td>{{ book.dt_available }}</td>
           <td>
-            <form method="get" action="{{ url_for('req_take_book', book_code=book.book_code) }}" class="request_take">
+            <form method="get" action="{{ url_for('req_take_book', book_code=book.book_code, owner=book.owner) }}" class="request_take">
               <input type="submit" value="запрос на выдачу">
             </form>  
           </td>

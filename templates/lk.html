@@ -1,13 +1,13 @@
-{% extends 'base.html' %} {% block content %} {{ super() }} {% for cat, msg in
-get_flashed_messages(True) %}
+{% extends 'base.html' %} {% block content %} 
+{{ super() }} 
+{% for cat, msg in get_flashed_messages(True) %}
 <div class="flash {{cat}}">{{msg}}</div>
 {% endfor %}
 <p>
-  <label>.:<b>: МОЯ ТЕКУЩАЯ КНИГА :</b>:.</label>
+  <label>.:<b>: СЕЙЧАС ЧИТАЮ КНИГУ :</b>:.</label>
 </p>
 <table>
   <thead>
-    {% for book in taken_books %}
     <tr>
       <th>Код книги</th>
       <th>Название</th>
@@ -18,14 +18,11 @@ get_flashed_messages(True) %}
       <th>Владелец</th>
       <th>Читатель</th>
       <th>Дата выдачи</th>
-      <th>Срок возврата</th>   
-      <th>Статус</th>       
+      <th>Срок возврата</th>
+      <th>Статус</th>
       <th>Действие</th>
-      {% if book.last_oper_id == 4 or book.last_oper_id == 5 %}       
       <th>Продление</th>
-      {% endif %}
     </tr>
-    {% endfor %}
   </thead>
   <tbody>
     {% for book in taken_books %}
@@ -39,46 +36,149 @@ get_flashed_messages(True) %}
       <td>{{ book.owner }}</td>
       <td>{{ book.reader }}</td>
       <td>{{ book.dt_take }}</td>
-      <td>{{ book.dt_return }}</td>      
-      <td>{{ book.oper_type }}</td> 
-      <td>    
+      <td>{{ book.dt_return }}</td>
+      <td>{{ book.oper_type }}</td>
+      <td>
         {% if book.last_oper_id == 2 %}
-        <form method="get" action="{{ url_for('unreq_take_book', book_code=book.book_code) }}" name="book_code">
+        <form method="get" action="{{ url_for('unreq_take_book', book_code=book.book_code, owner=book.owner) }}"
+          name="book_code">
           <input type="submit" value="отменить запрос" />
         </form>
         {% elif book.last_oper_id == 4 %}
-        <form method="get" action="{{ url_for('req_return_book', book_code=book.book_code) }}" name="book_code">
+        <form method="get" action="{{ url_for('req_return_book', book_code=book.book_code, owner=book.owner) }}"
+          name="book_code">
           <input type="submit" value="вернуть книгу" />
         </form>
         {% elif book.last_oper_id == 9 %}
-        <form method="get" action="{{ url_for('unreq_return_book', book_code=book.book_code) }}" name="book_code">
+        <form method="get" action="{{ url_for('unreq_return_book', book_code=book.book_code, owner=book.owner) }}"
+          name="book_code">
           <input type="submit" value="отменить запрос" />
-        </form>        
+        </form>
+        {% else %}
+        <form method="get" action="{{ url_for('lk') }}" name="book_code">
+          <input type="submit" value="не требуется" />
+        </form>
         {% endif %}
       </td>
       <td>
         {% if book.last_oper_id == 4 %}
-        <form method="get" action="{{ url_for('req_extend_book', book_code=book.book_code) }}" name="book_code">
+        <form method="get" action="{{ url_for('req_extend_book', book_code=book.book_code, owner=book.owner) }}"
+          name="book_code">
           <input type="submit" value="запросить" />
         </form>
         {% elif book.last_oper_id == 5 %}
-        <form method="get" action="{{ url_for('unreq_extend_book', book_code=book.book_code) }}" name="book_code">
+        <form method="get" action="{{ url_for('unreq_extend_book', book_code=book.book_code, owner=book.owner) }}"
+          name="book_code">
           <input type="submit" value="отменить" />
-        </form>        
+        </form>
+        {% else %}
+        <form method="get" action="{{ url_for('lk') }}" name="book_code">
+          <input type="submit" value="не требуется" />
+        </form>
         {% endif %}
-      </td> 
+      </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 <br />
 
+<p>
+  <label>.:<b>: МОЙ РАЗДЕЛ :</b>:.</label>
+</p>
+
 <div class="tabs">
+
   <input type="radio" name="inset" value="" id="tab_1" checked />
   <label for="tab_1">МОИ ПОДПИСКИ</label>
 
-  <input type="radio" name="inset" value="" id="tab_2" />
-  <label for="tab_2">МОЯ ИСТОРИЯ</label>
+  <input type="radio" name="inset" value="" id="tab_2" checked />
+  <label for="tab_2">СОБСТВЕННЫЕ КНИГИ</label>
+
+  <input type="radio" name="inset" value="" id="tab_3" />
+  <label for="tab_3">МОИ ОПЕРАЦИИ</label>
+
+  <div id="tbl_2">
+    <table>
+      <thead>
+        <tr>
+          <th>Код книги</th>
+          <th>Название</th>
+          <th>Автор</th>
+          <th>Жанр</th>
+          <th>Год издания</th>
+          <th>Количество страниц</th>
+          <th>Регистрация книги</th>
+          <!-- <th>Владелец</th> -->
+          <th>Текущий читатель</th>
+          <th>Дата выдачи</th>
+          <th>Срок возврата</th>
+          <th>Подписки</th>
+          <th>Статус</th>
+          <th>Действие</th>
+          <th>Продление</th>
+        </tr>
+
+      </thead>
+      <tbody>
+        {% for book in my_books %}
+        <tr>
+          <td>{{ book.book_code }}</td>
+          <td>{{ book.title }}</td>
+          <td>{{ book.author }}</td>
+          <td>{{ book.genre }}</td>
+          <td>{{ book.year }}</td>
+          <td>{{ book.pages }}</td>
+          <td>{{ book.dt_reg }}</td>
+           <!-- <td>{{ book.owner }}</td> -->
+          <td>{{ book.reader }}</td>
+          <td>{{ book.dt_take }}</td>
+          <td>{{ book.dt_return }}</td>
+          <td>{{ book.active_subs_count }}</td>
+          <td>{{ book.oper_type }}</td>
+          <td>
+            {% if book.last_oper_id == 2 %}
+            <form method="get" action="{{ url_for('take_book', book_code=book.book_code, reader=book.reader) }}"
+              name="book_code">
+              <input type="submit" value="выдать" />
+            </form>
+            {% elif book.last_oper_id == 5 %}
+            <form method="get" action="{{ url_for('extend_book', book_code=book.book_code, reader=book.reader) }}"
+              name="book_code">
+              <input type="submit" value="продлить" />
+            </form>
+            {% elif book.last_oper_id == 9 %}
+            <form method="get" action="{{ url_for('return_book', book_code=book.book_code, reader=book.reader) }}"
+              name="book_code">
+              <input type="submit" value="подтвердить возврат" />
+            </form>
+            {% else %}
+            <form method="get" action="{{ url_for('lk') }}" name="book_code">
+              <input type="submit" value="не требуется" />
+            </form>
+            {% endif %}
+          </td>
+          <td>
+            {% if book.last_oper_id == 5 %}
+            <form method="get" action="{{ url_for('unextend_book', book_code=book.book_code, reader=reader.owner) }}"
+              name="book_code">
+              <input type="submit" value="отказать" />
+            </form>
+            {% elif book.last_oper_id == 4 %}
+            <form method="get" action="{{ url_for('extend_book', book_code=book.book_code, reader=book.reader) }}"
+              name="book_code">
+              <input type="submit" value="продлить" />
+              {% else %}
+              <form method="get" action="{{ url_for('lk') }}" name="book_code">
+                <input type="submit" value="не требуется" />
+              </form>
+              {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <div id="tbl_1">
     <table>
@@ -88,8 +188,9 @@ get_flashed_messages(True) %}
           <th>Название</th>
           <th>Автор</th>
           <th>Год издания</th>
+          <th>Владелец</th>
           <th>Старт подписки</th>
-          <th>Срок подписки</th>
+          <th>Окончание подписки</th>
           <th>Действие</th>
         </tr>
       </thead>
@@ -99,22 +200,22 @@ get_flashed_messages(True) %}
           <td>{{ sub.book_code }}</td>
           <td>{{ sub.title }}</td>
           <td>{{ sub.author }}</td>
-          <td>{{ sub.public_year }}</td>
-          <td>{{ sub.dt_start }}</td>
-          <td>{{ sub.dt_stop }}</td>
+          <td>{{ sub.year }}</td>
+          <td>{{ sub.owner }}</td>
+          <td>{{ sub.dt_new }}</td>
+          <td>{{ sub.dt_close }}</td>
           <td>
-            {% if sub.user_name == user %}
-            <form method="get" action="{{ url_for('unsubscribe_book', book_id=sub.book_id) }}" name="book_id">
+            <form method="get" action="{{ url_for('unsubscribe_book', book_code=sub.book_code) }}" name="book_code">
               <input type="submit" value="отписаться" />
             </form>
-            {% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  <div id="tbl_2">
+
+  <div id="tbl_3">
     <table>
       <thead>
         <tr>
@@ -122,6 +223,7 @@ get_flashed_messages(True) %}
           <th>Название</th>
           <th>Автор</th>
           <th>Год издания</th>
+          <th>Владелец</th>
           <th>Операция</th>
           <th>Дата и время</th>
         </tr>
@@ -129,12 +231,13 @@ get_flashed_messages(True) %}
       <tbody>
         {% for oper in book_log %}
         <tr>
-          <td>{{ oper.code }}</td>
+          <td>{{ oper.book_code }}</td>
           <td>{{ oper.title }}</td>
           <td>{{ oper.author }}</td>
           <td>{{ oper.year }}</td>
-          <td>{{ oper.oper }}</td>
-          <td>{{ oper.dt }}</td>
+          <td>{{ oper.owner }}</td>
+          <td>{{ oper.oper_type }}</td>
+          <td>{{ oper.dt_reg }}</td>
         </tr>
         {% endfor %}
       </tbody>

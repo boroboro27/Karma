@@ -262,7 +262,8 @@ tr:hover {
 }
 
 /* отобразить контент, связанный с вабранной радиокнопкой (input type="radio") */
+#tab_2:checked~#tbl_2,
 #tab_1:checked~#tbl_1,
-#tab_2:checked~#tbl_2 {
+#tab_3:checked~#tbl_3 {
     display: block;
 }

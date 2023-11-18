@@ -84,7 +84,7 @@ def add_book():
                 flash(f"Ошибка добавления книги в каталог. Если не удается устранить ошибку самостоятельно, \n"
                       f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
             else:                
-                flash((f"Книга успешно добавлена в каталог под номером #{res[0]['result']}. \n"                       
+                flash((f"Книга успешно добавлена вами в каталог под номером #{res[0]['result']}. \n"                       
                        f"Запишите этот номер в книгу на 17ой странице. \n"
                        f'Благодаря этому любой читатель книги всегда будет знать, кому она принадлежит. \n'
                        f"Спасибо, что поддерживаете активность в нашем проекте."), category='success')
@@ -95,26 +95,38 @@ def add_book():
     else:
         return redirect(url_for('login'))
 
-@app.route('/req_take_book/<string:book_code>', methods=["GET"])
-def req_take_book(book_code):    
+@app.route('/req_take_book/<string:book_code>/<string:owner>', methods=["GET"])
+def req_take_book(book_code, owner):    
     if 'logged_in' in session:   
         res = callproc('[dbo].[sp_change_status]', (book_code, 2, session['userLogged']))
         if not res[0]['result']:
-            flash(f"Ошибка при запросе книги с кодом #{book_code} у владельца. \n"
+            flash(f"Ошибка запроса у владельца книги с кодом #{book_code}. \n"
                   f"Убедитесь, что у вас нет на руках других книг, или что вы являетесь владельцем этой книги. \n"
-                  f"Кроме этого, возможно, что книга уже выдана или запрошена другим пользователем :) \n"
+                  f"Кроме этого, возможно, что книга уже выдана или запрошена другим пользователем:) \n"
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Читателем запрошена выдача книги с кодом #{book_code}. "
+                               f"Свяжитесь с читатателем по адресу эл.почты {session['userLogged']} "
+                               f"для очной передачи книги читателю. "
+                               f"ПОСЛЕ факта передачи книги читателю подтвердите, пожалуйста, выдачу книги в личном кабинете.",
+                               [f'{owner}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено владельцу книги на адрес эл.почты {owner}@tele2.ru']."
+                      , category='success')
             flash((f"Книга с кодом #{book_code} успешно запрошена у владельца. \n"
-                   f"Мы сообщили ему об этом по эл. почте. \n"
+                   f"Мы сообщим ему об этом по эл. почте. \n"
                     f'Ожидайте, пожалуйста, когда владелец свяжется с вами для передачи книги.'), category='success')    
         return redirect(url_for('lk'))
     else:
         return redirect(url_for('login'))
     
-@app.route('/unreq_take_book/<string:book_code>', methods=["GET"])
-def unreq_take_book(book_code):    
+@app.route('/unreq_take_book/<string:book_code>/<string:owner>', methods=["GET"])
+def unreq_take_book(book_code, owner):    
     if 'logged_in' in session:   
         res = callproc('[dbo].[sp_change_status]', (book_code, 3, session['userLogged']))
         if not res[0]['result']:
@@ -122,7 +134,16 @@ def unreq_take_book(book_code):
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
-            flash((f"Отменен запрос на выдачу книги с кодом #{book_code}. "
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Читателем  {session['userLogged'].split('@')[0]} отменён запрос на выдачу книги с кодом #{book_code}. С вашей стороны действий не требуется.",
+                               [f'{owner}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено владельцу книги на адрес эл.почты {owner}@tele2.ru']."
+                      , category='success')            
+            flash((f"Отменен запрос на выдачу книги с кодом #{book_code}."
                     f'Владелец книги будет уведомлен об этом по эл. почте. '), category='success')    
         return redirect(url_for('lk'))
     else:
@@ -138,6 +159,17 @@ def take_book(book_code, reader):
                   f"Если не удается устранить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Выдача книги с кодом #{book_code} подтверждёна владельцем {session['userLogged'].split('@')[0]}. "
+                               f"С вашей стороны действий не требуется."
+                               f"Книгу необходимо вернуть в установленный срок (см. Личный кабинет)",
+                               [f'{reader}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления читателю книги на адрес эл.почты {reader}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено читателю книги на адрес эл.почты {reader}@tele2.ru']."
+                      , category='success') 
             flash((f"Книга под номером #{book_code} успешно выдана читателю. \n"
                     f"Спасибо, что поддерживаете активность в нашем проекте."), category='success')
         
@@ -145,8 +177,8 @@ def take_book(book_code, reader):
     else:
         return redirect(url_for('login'))
     
-@app.route('/req_extend_book/<string:book_code>', methods=["GET"])
-def req_extend_book(book_code):    
+@app.route('/req_extend_book/<string:book_code>/<string:owner>', methods=["GET"])
+def req_extend_book(book_code, owner):    
     if 'logged_in' in session:   
         res = callproc('[dbo].[sp_change_status]', (book_code, 5, session['userLogged']))
         if not res[0]['result']:
@@ -154,6 +186,16 @@ def req_extend_book(book_code):
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Поступил запрос от читателя {session['userLogged'].split('@')[0]} на продление срока возврата книги с кодом #{book_code}. "
+                               f"Подтвердите запрос или откажите читателю в продлении книги в личном кабинете.",
+                               [f'{owner}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено владельцу книги на адрес эл.почты {owner}@tele2.ru']."
+                      , category='success')  
             flash((f"Книга с кодом #{book_code}: успешно запрошено продление у владельца. \n"
                    f"Мы сообщили ему об этом по эл. почте. \n"
                     f'Ожидайте, пожалуйста, когда владелец примет решение о продлении книги или об отказе в продлении.'), category='success')    
@@ -163,8 +205,8 @@ def req_extend_book(book_code):
     
 
     
-@app.route('/unreq_extend_book/<string:book_code>', methods=["GET"])
-def unreq_extend_book(book_code):    
+@app.route('/unreq_extend_book/<string:book_code>/<string:owner>', methods=["GET"])
+def unreq_extend_book(book_code, owner):    
     if 'logged_in' in session:   
         res = callproc('[dbo].[sp_change_status]', (book_code, 6, session['userLogged']))
         if not res[0]['result']:
@@ -172,6 +214,16 @@ def unreq_extend_book(book_code):
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Читателем {session['userLogged'].split('@')[0]} отменён запрос на продление срока возврата книги с кодом #{book_code}. "
+                               f"С вашей стороны действий не требуется.",
+                               [f'{owner}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено владельцу книги на адрес эл.почты {owner}@tele2.ru']."
+                      , category='success')  
             flash((f"Отменен запрос на продление книги с кодом #{book_code}. \n"
                     f'Владелец книги будет уведомлен об этом по эл. почте. '), category='success')    
         return redirect(url_for('lk'))
@@ -188,6 +240,17 @@ def extend_book(book_code, reader):
                   f"Если не удается устранить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Запрос на продление книги с кодом #{book_code} подтверждён владельцем {session['userLogged'].split('@')[0]}. "
+                               f"Книгу необходимо вернуть в новый установленный срок (см. Личный кабинет)"
+                               f"С вашей стороны действий не требуется.",
+                               [f'{reader}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления читателю книги на адрес эл.почты {reader}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено читателю книги на адрес эл.почты {reader}@tele2.ru']."
+                      , category='success') 
             flash((f"Книга под номером #{book_code} успешно продлена. \n"
                    f'Читатель книги будет уведомлен об этом по эл. почте.\n'
                    f"Спасибо, что поддерживаете активность в нашем проекте. \n"), category='success')
@@ -205,6 +268,17 @@ def unextend_book(book_code, reader):
                   f"Если не удается устранить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Запрос на продление книги с кодом #{book_code} отклонён владельцем {session['userLogged'].split('@')[0]}. "
+                               f"С вашей стороны действий не требуется. "
+                               f"Книгу необходимо вернуть в установленный ранее срок (см. Личный кабинет)",
+                               [f'{reader}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления читателю книги на адрес эл.почты {reader}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено читателю книги на адрес эл.почты {reader}@tele2.ru']."
+                      , category='success') 
             flash((f"Читателю отказано в продлении книги под номером #{book_code}. \n"
                    f'Читатель книги будет уведомлен об этом по эл. почте.\n'
                    f"Мы с пониманием относимся к вашему решению и знаем, что вы взвесили все за и против:)\n"), 
@@ -214,8 +288,8 @@ def unextend_book(book_code, reader):
     else:
         return redirect(url_for('login'))
     
-@app.route('/req_return_book/<string:book_code>', methods=["GET"])
-def req_return_book(book_code):    
+@app.route('/req_return_book/<string:book_code>/<string:owner>', methods=["GET"])
+def req_return_book(book_code, owner):    
     if 'logged_in' in session:   
         res = callproc('[dbo].[sp_change_status]', (book_code, 9, session['userLogged']))
         if not res[0]['result']:
@@ -223,15 +297,27 @@ def req_return_book(book_code):
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Поступил запрос от читателя на возврат книги с кодом #{book_code}. "
+                               f"Свяжитесь с читатателем по адресу эл.почты {session['userLogged']} "
+                               f"для очной передачи книги владельцу. "
+                               f"После факта получения книги подтвердите возврат книги в личном кабинете.",
+                               [f'{owner}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено владельцу книги на адрес эл.почты {owner}@tele2.ru']."
+                      , category='success') 
             flash((f"Книга с кодом #{book_code}: успешно запрошен возврат книги владельцу. \n"
-                   f"Мы сообщили ему об этом по эл. почте. \n"
+                   f"Мы сообщим владельцу об этом по эл. почте. \n"
                     f'Ожидайте, пожалуйста, когда владелец свяжется с вами для передачи ему книги'), category='success')    
         return redirect(url_for('lk'))
     else:
         return redirect(url_for('login'))
     
-@app.route('/unreq_return_book/<string:book_code>', methods=["GET"])
-def unreq_return_book(book_code):    
+@app.route('/unreq_return_book/<string:book_code>/<string:owner>', methods=["GET"])
+def unreq_return_book(book_code, owner):    
     if 'logged_in' in session:   
         res = callproc('[dbo].[sp_change_status]', (book_code, 10, session['userLogged']))
         if not res[0]['result']:
@@ -239,6 +325,16 @@ def unreq_return_book(book_code):
                   f"Если не удается выявить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Читателем {session['userLogged'].split('@')[0]} отменён запрос на возврат книги с кодом #{book_code}. "
+                               f"С вашей стороны действий не требуется.",
+                               [f'{owner}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления владельцу книги на адрес эл.почты {owner}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено владельцу книги на адрес эл.почты {owner}@tele2.ru']."
+                      , category='success') 
             flash((f"Отменен запрос на возврат книги с кодом #{book_code}. \n"
                     f'Владелец книги будет уведомлен об этом по эл. почте. '), category='success')    
         return redirect(url_for('lk'))
@@ -255,8 +351,36 @@ def return_book(book_code, reader):
                   f"Если не удается устранить ошибку самостоятельно, \n"
                     f"сообщите, пожалуйста, нам об этом через форму обратной связи.", category='error')
         else:
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Возврат книги с кодом #{book_code} подтверждён владельцем {session['userLogged'].split('@')[0]}. "
+                               f"С вашей стороны дополнительных действий не требуется."
+                               f"Спасибо, что участвуете в проекте! Возращайтесь снова!",
+                               [f'{reader}@tele2.ru'])
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомления читателю книги на адрес эл.почты {reader}@tele2.ru']. \n"
+                      f"Обратитесь, пожалуйста, к организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомление успешно отправлено читателю книги на адрес эл.почты {reader}@tele2.ru']."
+                      , category='success') 
             flash((f"Книга под номером #{book_code} успешно позвращена владельцу. \n"                   
                    f"Спасибо, что поддерживаете активность в нашем проекте. \n"), category='success')
+           
+           #отправка рассылки всем подписчикам книги
+            addressees = []
+            emails = callproc('[dbo].[sp_get_book_followers]', (book_code,)) 
+            for email in emails:
+                addressees.append(email['email'])
+            is_sent = send_email(f'Статус книги #{book_code}',
+                               f"Возврат книги с кодом #{book_code} подтверждён владельцем {session['userLogged'].split('@')[0]}. "
+                               f"Книга снова доступна для выдачи в каталоге проекта."                               
+                               f"Поспеши, если книга тебе ещё интересна! Отменить подписку на книгу можно в личном кабинете. ",
+                               addressees)
+            if not is_sent[0]:
+                flash(f"Ошибка при отправке уведомлений подписчикам книги. \n"
+                      f"Сообщите, пожалуйста, об ошибке организаторам проекта через форму обратной связи.", category='error')                
+            else:
+                flash(f"Уведомления успешно отправлены подписчикам книги."
+                      , category='success') 
         
         return redirect(url_for('lk'))
     else:
@@ -266,9 +390,10 @@ def return_book(book_code, reader):
 @app.route('/subscribe_book/<string:book_code>', methods=["GET"])
 def subscribe_book(book_code):
     if 'logged_in' in session:
-        res = callproc('[dbo].[[sp_add_new_subscription]]', (book_code, session['userLogged']))  
+        res = callproc('[dbo].[sp_add_new_subscription]', (book_code, session['userLogged']))  
         if not res[0]['result']:
-            flash(f"Ошибка при подписке на книгу с кодом #{book_code}. \nЕсли не удается устранить ошибку самостоятельно, \n"
+            flash(f"Ошибка при подписке на книгу с кодом #{book_code}. \n"
+                  f"Если не удается устранить ошибку самостоятельно, \n"
                   f"сообщите, пожалуйста, нам об ошибке через форму обратной связи.", category='error')
         else:
             msg = (f"Оформлена новая подписка на книгу с кодом #{book_code}. \n"
@@ -282,7 +407,7 @@ def subscribe_book(book_code):
 @app.route('/unsubscribe_book/<string:book_code>', methods=["GET"])
 def unsubscribe_book(book_code):
     if 'logged_in' in session:
-        res = callproc('[dbo].[[sp_add_new_subscription]]', (book_code, session['userLogged']))  
+        res = callproc('[dbo].[sp_close_subscription]', (book_code, session['userLogged']))  
         if not res[0]['result']:
             flash(f"Ошибка при отмене подписки на книгу с кодом #{book_code}. \n"
                   f"Если не удается устранить ошибку самостоятельно, \n"
@@ -311,17 +436,15 @@ def rules():
 
 @app.route("/lk", methods=["POST", "GET"])
 def lk():
-    if 'logged_in' in session:
-        
-        user_id = dbase.getUser(session['userLogged'])
+    if 'logged_in' in session:        
         return render_template('lk.html', title='Личный кабинет',
                                # True - т.е. для отображения в ЛК, а не на главной
                                taken_books=callproc('[dbo].[sp_get_taken2me_books]', (session['userLogged'],)),
-                               subscriptions=dbase.getSubscriptions(
-                                   user_id[0]),
-                               book_log=dbase.getBookLog(user_id[0]),
+                               subscriptions=callproc('[dbo].[sp_get_my_subscriptions]', (session['userLogged'],)),
+                               book_log=callproc('[dbo].[sp_get_my_forms_log]', (session['userLogged'],)),
+                               my_books=callproc('[dbo].[sp_get_my_books]', (session['userLogged'],)),
                                menu=callproc('[dbo].[sp_get_menu]', ()),
-                               user=session['userLogged'].split('@')[0], user_id=user_id[0])
+                               user=session['userLogged'].split('@')[0])
     else:
         return redirect(url_for('login'))
 
@@ -344,16 +467,18 @@ def login():
                                f'Ваш код подтверждения: {code}',
                                [email])
             if not is_sent[0]:
-                flash(f"Ошибка при отправке кода подтверждения: {is_sent[1]}. Если не удается устранить ошибку самостоятельно, \n"
-                      f"обратитесь, пожалуйста, к организаторам проекта Книжный перекресток.", category='error')
+                flash(f"Ошибка при отправке кода подтверждения: {is_sent[1]}. "
+                      f"Если не удается устранить ошибку самостоятельно, \n"
+                      f"обратитесь, пожалуйста, к организаторам проекта.", category='error')
                 return redirect(url_for('login'))
             else:
                 flash(f"Код подтверждения успешно отправлен на адрес электронной почты {email}. "
                       f"Проверьте вашу почту и введите полученный код в поле ниже.", category='success')
                 return render_template('verify_code.html', title="Ввод кода подтверждения", menu=callproc('[dbo].[sp_get_menu]', ()))
         else:
-            flash(f"Не верно указан адрес корпоративной электронной почты (ххх@tele2.ru). Если не удается устранить ошибку самостоятельно, \n"
-                  f"обратитесь, пожалуйста, к организаторам проекта Книжный перекресток.", category='error')
+            flash(f"Не верно указан адрес корпоративной электронной почты (ivan.ivanov@tele2.ru). "
+                  f"Если не удается устранить ошибку самостоятельно, \n"
+                  f"обратитесь, пожалуйста, к организаторам проекта.", category='error')
             return redirect(url_for('login'))
     else:
         return render_template('login.html', title="Авторизация участника", menu=callproc('[dbo].[sp_get_menu]', ()))
@@ -389,39 +514,32 @@ def verify_code():
 
 @app.route("/contact", methods=["POST", "GET"])
 def contact():
-    if 'logged_in' in session:
-        user_id = dbase.getUser(session['userLogged'])
+    if 'logged_in' in session:        
         if request.method == "POST":
             msg = request.form['message'].strip()
-            res = dbase.addFeedback(msg, user_id[0])
-            if not res[0]:
+            res = callproc('[dbo].[sp_add_new_fb_support]', (session['userLogged'], msg))
+            if not res[0]['result']:
                 flash(
-                    f"Ошибка отправки обращения: {res[1]}.", category='error')
+                    f"Ошибка отправки обращения.", category='error')
             else:
-                flash((f"Обращение #{res[1]} принято в работу. "
-                       f"Ожидайте ответа на адрес вашей эл. почты {session['userLogged']}"), category='success')
+                flash((f"Обращение #{res[0]['result']} принято в работу. "
+                       f"Ожидайте ответа от организаторов на адрес вашей эл. почты: {session['userLogged']}"), category='success')
 
         return render_template('contact.html', title="Обратная связь", menu=callproc('[dbo].[sp_get_menu]', ()),
-                               feedbacks=dbase.getAllFeedbacks(), user=session['userLogged'].split('@')[0],
-                               is_admin=user_id[1])
+                               feedbacks=callproc('[dbo].[sp_get_fb_support]', (session['userLogged'],)))
     else:
         return redirect(url_for('login'))
 
 
 @app.route('/close_feedback/<int:fb_id>', methods=["GET"])
 def close_feedback(fb_id):
-    if 'logged_in' in session:
-        user_id = dbase.getUser(session['userLogged'])
-        if user_id[1] != 1:
-            return redirect(url_for('contact'))
+    if 'logged_in' in session:        
 
-        res = dbase.closeFeedback(fb_id)
-        if not res[0]:
-            flash(
-                f"Ошибка при закрытии обращения #{fb_id}: {res[1]}.", category='error')
+        res = callproc('[dbo].[sp_close_fb_support]', (fb_id, ))
+        if not res[0]['result']:
+            flash(f"Ошибка при закрытии обращения #{fb_id}.", category='error')
         else:
-            flash(
-                (f'Обращение #{fb_id} закрыто (закрыто обращений в БД: {res[1]})'), category='success')
+            flash(f'Обращение #{fb_id} закрыто.', category='success')
 
         return redirect(url_for('contact'))
     else:
@@ -445,4 +563,4 @@ def forbidden(error):
                            menu=callproc('[dbo].[sp_get_menu]', ())), 403
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0') 
