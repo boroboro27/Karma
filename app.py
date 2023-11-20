@@ -4,6 +4,9 @@ from flask_mail  import Mail, Message
 from flask import flash, redirect, render_template, request, session, url_for, abort
 import pymssql
 from smtplib import SMTPException
+from flask_wtf import FlaskForm
+from wtforms import EmailField, SubmitField
+from wtforms.validators import InputRequired, Email
 
 
 # создание экземпляра приложения
@@ -22,6 +25,10 @@ def callproc(proc: str, params: tuple) -> dict:
           res_dict = [*cursor]
           conn.commit()
           return res_dict
+      
+class LoginForm(FlaskForm):    
+    email = EmailField('Адрес вашей корпоративной эл.почты (@tele2.ru): ', validators=[Email(), InputRequired()]) 
+    submit = SubmitField("Получить код")
 
 def send_email(subject: str, body: str, users: list[str]) -> tuple[bool, str | None]:
     """
@@ -42,6 +49,8 @@ def send_email(subject: str, body: str, users: list[str]) -> tuple[bool, str | N
             return (True, )
     except SMTPException as err:
         return (False, str(err))  
+    
+ 
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -456,9 +465,9 @@ def lk():
 def login():
     if 'logged_in' in session:
         return redirect(url_for('rules'))
-
-    if request.method == 'POST':
-        email = request.form['email'].lower().strip()
+    form = LoginForm()
+    if form.validate_on_submit():        
+        email = form.email.data.lower().strip()
         if email.split('@')[1] == 'tele2.ru':
             session['userLogged'] = email            
             code = random.randint(1000, 9999)  # генерация случайного кода
@@ -476,12 +485,12 @@ def login():
                       f"Проверьте вашу почту и введите полученный код в поле ниже.", category='success')
                 return render_template('verify_code.html', title="Ввод кода подтверждения", menu=callproc('[dbo].[sp_get_menu]', ()))
         else:
-            flash(f"Не верно указан адрес корпоративной электронной почты (ivan.ivanov@tele2.ru). "
+            flash(f"Не верно указан домен (@tele2.ru) корпоративной эл. почты (пример, ivan.ivanov@tele2.ru). "
                   f"Если не удается устранить ошибку самостоятельно, \n"
                   f"обратитесь, пожалуйста, к организаторам проекта.", category='error')
             return redirect(url_for('login'))
     else:
-        return render_template('login.html', title="Авторизация участника", menu=callproc('[dbo].[sp_get_menu]', ()))
+        return render_template('login.html', title="Авторизация участника", menu=callproc('[dbo].[sp_get_menu]', ()), form=form)
 
 # обработка ввода кода подтверждения
 @app.route('/verify_code', methods=["POST", "GET"])

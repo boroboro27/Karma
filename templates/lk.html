@@ -1,6 +1,6 @@
-{% extends 'base.html' %} 
-{% block content %} 
-{{ super() }} 
+{% extends 'base.html' %}
+{% block content %}
+{{ super() }}
 {% for cat, msg in get_flashed_messages(True) %}
 <div class="flash {{cat}}">{{msg}}</div>
 {% endfor %}
@@ -91,15 +91,15 @@
 <div class="tabs">
 
   <input type="radio" name="inset" value="" id="tab_1" checked />
-  <label for="tab_1">МОИ ПОДПИСКИ</label>
+  <label for="tab_1">СОБСТВЕННЫЕ КНИГИ</label>
 
-  <input type="radio" name="inset" value="" id="tab_2" checked />
-  <label for="tab_2">СОБСТВЕННЫЕ КНИГИ</label>
+  <input type="radio" name="inset" value="" id="tab_2" />
+  <label for="tab_2">МОИ ПОДПИСКИ</label>  
 
   <input type="radio" name="inset" value="" id="tab_3" />
   <label for="tab_3">МОИ ОПЕРАЦИИ</label>
 
-  <div id="tbl_2">
+  <div id="tbl_1">
     <table>
       <thead>
         <tr>
@@ -131,7 +131,7 @@
           <td>{{ book.year }}</td>
           <td>{{ book.pages }}</td>
           <td>{{ book.dt_reg }}</td>
-           <!-- <td>{{ book.owner }}</td> -->
+          <!-- <td>{{ book.owner }}</td> -->
           <td>{{ book.reader }}</td>
           <td>{{ book.dt_take }}</td>
           <td>{{ book.dt_return }}</td>
@@ -181,7 +181,7 @@
     </table>
   </div>
 
-  <div id="tbl_1">
+  <div id="tbl_2">
     <table>
       <thead>
         <tr>
@@ -214,7 +214,7 @@
         {% endfor %}
       </tbody>
     </table>
-  </div>
+  </div>  
 
   <div id="tbl_3">
     <table>

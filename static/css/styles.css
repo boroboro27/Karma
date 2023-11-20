@@ -123,6 +123,35 @@ select {
     margin-bottom: 10px;
 }
 
+.form-login label {
+    font-size: 18px;
+    display: inline-block;
+    min-width: 80px;
+    margin-bottom: 10px;
+}
+
+.form-login p {
+    margin: 5px 0;
+}
+
+.form-login input {
+    font-size: 16px;
+    padding: 7px;
+    border-radius: 5px;
+    border: 1px solid #000000;
+    background-color: #fcfafa;
+    margin-bottom: 10px;
+}
+
+.form-login input[type=submit] {
+    font-size: 16px;
+    padding: 7px;
+    border-radius: 5px;
+    border: 1px solid #000000;
+    background-color: #fcfafa;
+    margin-bottom: 10px;
+}
+
 .form-take-book input[type=submit] {
     font-size: 16px;
     padding: 7px;
@@ -271,8 +300,8 @@ tr:hover {
 }
 
 /* отобразить контент, связанный с вабранной радиокнопкой (input type="radio") */
-#tab_2:checked~#tbl_2,
 #tab_1:checked~#tbl_1,
+#tab_2:checked~#tbl_2,
 #tab_3:checked~#tbl_3 {
     display: block;
 }
