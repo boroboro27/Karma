@@ -46,7 +46,7 @@
           <td>{{ book.dt_reg }}</td>
           <td>{{ book.dt_available }}</td>
           <td>
-            <form method="get" action="{{ url_for('req_take_book', book_code=book.book_code, owner=book.owner) }}" class="request_take">
+            <form method="get" action="{{ url_for('req_take_book', book_code=book.book_code, owner=book.owner) }}" name="req_take_book" class="request_take">
               <input type="submit" value="запрос на выдачу">
             </form>  
           </td>
@@ -89,11 +89,11 @@
           <td>{{ book.oper_type }}</td>
           <td>            
             {% if book.subs_status == 1 %}
-            <form method="post" action="{{ url_for('lk') }}" class="subscription" >
+            <form method="post" action="{{ url_for('lk') }}" name="already_signed" class="subscription" >
               <input type="submit" value="уже подписан">
             </form>
             {% elif book.subs_status == 0 %}
-            <form method="get" action="{{ url_for('subscribe_book', book_code=book.book_code) }}" class="subscription">
+            <form method="get" action="{{ url_for('subscribe_book', book_code=book.book_code) }}" name="subscribe" class="subscription">
               <input type="submit" value="подписаться">
             </form>        
             {% endif %}

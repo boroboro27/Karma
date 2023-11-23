@@ -416,7 +416,7 @@ def subscribe_book(book_code):
 @app.route('/unsubscribe_book/<string:book_code>', methods=["GET"])
 def unsubscribe_book(book_code):
     if 'logged_in' in session:
-        res = callproc('[dbo].[sp_close_subscription]', (book_code, session['userLogged']))  
+        res = callproc('[dbo].[sp_close_subscription]', (book_code, session['userLogged'], 1))  
         if not res[0]['result']:
             flash(f"Ошибка при отмене подписки на книгу с кодом #{book_code}. \n"
                   f"Если не удается устранить ошибку самостоятельно, \n"

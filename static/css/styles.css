@@ -79,6 +79,10 @@ div.content {
     margin: 20px;
 }
 
+img.img_rules_status {    
+    border:1px solid black;
+    }
+
 .form-contact label {
     font-size: 16px;
     display: inline-block;
@@ -232,7 +236,7 @@ table {
 table.rules {
     border: 2px solid #ddd;
     border-collapse: collapse;
-    width: 40%;
+    width: 70%;
     margin: 0;
     font-size: 1em;
     font-family: Arial, sans-serif;
